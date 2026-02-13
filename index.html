@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Saga Pilot // Manual Input</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00f3ff;
+            --secondary: #bc13fe;
+            --bg-dark: #050b14;
+            --bg-light: #e0e5ec;
+            --glass-dark: rgba(10, 20, 30, 0.65);
+            --glass-light: rgba(255, 255, 255, 0.65);
+            --text-dark: #e0f7ff;
+            --text-light: #1a202c;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+
+        /* Themes */
+        body.dark-mode {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+            background-image: radial-gradient(circle at 50% 0%, #1a2c4e 0%, #050b14 70%);
+        }
+
+        body.light-mode {
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            background-image: radial-gradient(circle at 50% 0%, #ffffff 0%, #cfd9df 90%);
+        }
+
+        /* Glassmorphism */
+        .glass {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode .glass {
+            background: var(--glass-dark);
+            border-color: rgba(0, 243, 255, 0.15);
+        }
+
+        .light-mode .glass {
+            background: var(--glass-light);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 5px 5px 15px #b8b9be, -5px -5px 15px #ffffff;
+        }
+
+        /* Neon Glows */
+        .neon-text {
+            text-shadow: 0 0 5px currentColor;
+        }
+        
+        .dark-mode .glow-border {
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0, 243, 255, 0.1);
+        }
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+        /* Custom Inputs */
+        input[type="number"], select {
+            background: transparent;
+            border-bottom: 2px solid rgba(128,128,128,0.3);
+            transition: all 0.3s;
+            color: inherit;
+        }
+        input:focus {
+            outline: none;
+            border-bottom-color: var(--primary);
+        }
+        
+        /* Placeholder styling */
+        ::placeholder {
+            color: currentColor;
+            opacity: 0.3;
+        }
+
+        /* Animations */
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(0.98); }
+        }
+        .pulse-anim { animation: pulse-slow 3s infinite; }
+
+        .hidden-tab { display: none; }
+        .active-tab { display: block; animation: fadeIn 0.4s; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="dark-mode min-h-screen pb-20 overflow-x-hidden">
+
+    <!-- Top Bar -->
+    <nav class="fixed top-0 w-full z-50 glass border-b-0 rounded-none px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div>
+            <h1 class="orbitron text-lg font-bold tracking-wider neon-text text-cyan-400">SAGA<span class="text-purple-500">PILOT</span></h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="clock" class="text-sm font-mono opacity-80">00:00</span>
+            <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-white/10 transition">
+                <svg id="theme-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            </button>
+        </div>
+    </nav>
+
+    <main class="container mx-auto pt-20 px-4 max-w-md">
+
+        <!-- Co-Pilot Status -->
+        <section id="copilot-card" class="glass p-4 mb-6 border-l-4 border-cyan-400 glow-border">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 class="text-xs uppercase tracking-widest opacity-60 mb-1">Live Co-Pilot</h2>
+                    <p id="copilot-msg" class="text-lg font-bold leading-tight">Waiting for Data...</p>
+                </div>
+                <div id="copilot-icon" class="text-3xl">🤖</div>
+            </div>
+            <div class="mt-3 flex gap-2 text-xs font-mono opacity-70">
+                <span id="current-day">--</span>
+                <span>•</span>
+                <span id="current-mode">Standby</span>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Specs -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="glass p-4 text-center relative overflow-hidden group">
+                <div class="absolute inset-0 bg-gradient-to-t from-cyan-500/10 to-transparent opacity-50"></div>
+                <h3 class="text-xs uppercase opacity-60">Net Profit</h3>
+                <div class="text-2xl font-bold orbitron text-cyan-400 mt-1" id="total-profit">0 <span class="text-xs">LE</span></div>
+                <div class="text-[10px] mt-1 opacity-50">This Week</div>
+            </div>
+            <div class="glass p-4 text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-t from-purple-500/10 to-transparent opacity-50"></div>
+                <h3 class="text-xs uppercase opacity-60">Fuel Burned</h3>
+                <div class="text-2xl font-bold orbitron text-purple-400 mt-1" id="total-fuel-bars">0.0</div>
+                <div class="text-[10px] mt-1 opacity-50">Dash Bars Used</div>
+            </div>
+        </div>
+
+        <!-- Controls / Inputs -->
+        <section class="glass p-1 mb-6">
+            <div class="flex justify-between border-b border-gray-700/30">
+                <button onclick="switchTab('settings')" class="flex-1 py-3 text-sm font-bold opacity-60 hover:opacity-100 transition tab-btn" id="btn-settings">CONFIG</button>
+                <button onclick="switchTab('commute')" class="flex-1 py-3 text-sm font-bold text-cyan-400 border-b-2 border-cyan-400 tab-btn" id="btn-commute">COMMUTE</button>
+                <button onclick="switchTab('shift')" class="flex-1 py-3 text-sm font-bold opacity-60 hover:opacity-100 transition tab-btn" id="btn-shift">SHIFT</button>
+            </div>
+
+            <!-- SETTINGS TAB -->
+            <div id="tab-settings" class="hidden-tab p-4 space-y-4">
+                <div class="space-y-2">
+                    <label class="text-xs uppercase opacity-60">Fuel Price (92 Octane)</label>
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">⛽</span>
+                        <input type="number" id="fuel-price" placeholder="e.g. 19.25" class="w-full bg-transparent p-2 text-lg font-mono" oninput="recalc()">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs uppercase opacity-60">Saga Consumption (L/100km)</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-[10px] opacity-50">Highway</span>
+                            <input type="number" id="cons-hwy" placeholder="e.g. 6.8" class="w-full bg-transparent p-1 font-mono" oninput="recalc()">
+                        </div>
+                        <div>
+                            <span class="text-[10px] opacity-50">City Traffic</span>
+                            <input type="number" id="cons-city" placeholder="e.g. 9.5" class="w-full bg-transparent p-1 font-mono" oninput="recalc()">
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs uppercase opacity-60">Weekly Fixed Costs</label>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm">Maintenance Fund</span>
+                        <input type="number" id="cost-maint" placeholder="e.g. 100" class="w-20 bg-transparent text-right p-1 font-mono" oninput="recalc()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMMUTE TAB -->
+            <div id="tab-commute" class="active-tab p-4 space-y-5">
+                <!-- Trip 1: Cairo -> Alex -->
+                <div class="relative">
+                    <h3 class="text-sm font-bold text-cyan-400 mb-2 flex justify-between">
+                        <span>Wednesday: CAI ➝ ALX</span>
+                        <span class="text-xs opacity-60 font-normal">220 km</span>
+                    </h3>
+                    <div class="flex items-center justify-between bg-black/10 p-3 rounded-lg border border-white/5">
+                        <div class="text-xs">
+                            <div class="opacity-60 mb-1">Intercity Riders</div>
+                            <input type="number" id="riders-down" placeholder="0" class="w-12 bg-transparent border-b text-center" oninput="recalc()">
+                            <span class="opacity-50">pax</span>
+                        </div>
+                        <div class="text-xs text-right">
+                            <div class="opacity-60 mb-1">Price/Pax</div>
+                            <input type="number" id="price-down" placeholder="0" class="w-16 bg-transparent border-b text-center" oninput="recalc()">
+                            <span class="opacity-50">LE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trip 2: Alex -> Cairo -->
+                <div class="relative">
+                    <h3 class="text-sm font-bold text-purple-400 mb-2 flex justify-between">
+                        <span>Fri/Sat: ALX ➝ CAI</span>
+                        <span class="text-xs opacity-60 font-normal">220 km</span>
+                    </h3>
+                    <div class="flex items-center justify-between bg-black/10 p-3 rounded-lg border border-white/5">
+                        <div class="text-xs">
+                            <div class="opacity-60 mb-1">Intercity Riders</div>
+                            <input type="number" id="riders-up" placeholder="0" class="w-12 bg-transparent border-b text-center" oninput="recalc()">
+                            <span class="opacity-50">pax</span>
+                        </div>
+                        <div class="text-xs text-right">
+                            <div class="opacity-60 mb-1">Price/Pax</div>
+                            <input type="number" id="price-up" placeholder="0" class="w-16 bg-transparent border-b text-center" oninput="recalc()">
+                            <span class="opacity-50">LE</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between items-center pt-2">
+                    <span class="text-xs opacity-60">Total Tolls (Round Trip)</span>
+                    <input type="number" id="cost-tolls" placeholder="e.g. 60" class="w-16 bg-transparent text-right border-b" oninput="recalc()">
+                </div>
+            </div>
+
+            <!-- SHIFT TAB -->
+            <div id="tab-shift" class="hidden-tab p-4 space-y-6">
+                <!-- Cairo Shift -->
+                <div>
+                    <h3 class="text-sm font-bold text-orange-400 mb-2">Cairo Shifts (Wed/Thu)</h3>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-black/10 p-2 rounded">
+                            <div class="text-[10px] opacity-60">Hours/Wk</div>
+                            <input type="number" id="cai-hours" placeholder="0" class="w-full text-center bg-transparent font-bold" oninput="recalc()">
+                        </div>
+                        <div class="bg-black/10 p-2 rounded">
+                            <div class="text-[10px] opacity-60">Rides/Hr</div>
+                            <input type="number" id="cai-rph" placeholder="0" class="w-full text-center bg-transparent" oninput="recalc()">
+                        </div>
+                        <div class="bg-black/10 p-2 rounded">
+                            <div class="text-[10px] opacity-60">Net Avg/Ride</div>
+                            <input type="number" id="cai-avg" placeholder="0" class="w-full text-center bg-transparent" oninput="recalc()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alex Shift -->
+                <div>
+                    <h3 class="text-sm font-bold text-blue-400 mb-2">Alex Shift (Sat)</h3>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-black/10 p-2 rounded">
+                            <div class="text-[10px] opacity-60">Hours/Wk</div>
+                            <input type="number" id="alx-hours" placeholder="0" class="w-full text-center bg-transparent font-bold" oninput="recalc()">
+                        </div>
+                        <div class="bg-black/10 p-2 rounded">
+                            <div class="text-[10px] opacity-60">Rides/Hr</div>
+                            <input type="number" id="alx-rph" placeholder="0" class="w-full text-center bg-transparent" oninput="recalc()">
+                        </div>
+                        <div class="bg-black/10 p-2 rounded">
+                            <div class="text-[10px] opacity-60">Net Avg/Ride</div>
+                            <input type="number" id="alx-avg" placeholder="0" class="w-full text-center bg-transparent" oninput="recalc()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Financial Breakdown -->
+        <section class="glass p-4">
+            <h3 class="text-xs orbitron uppercase tracking-widest mb-4 opacity-70">Weekly Report</h3>
+            
+            <!-- Revenue -->
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm">Total Revenue</span>
+                <span class="text-sm font-bold text-green-400" id="disp-revenue">0 LE</span>
+            </div>
+            
+            <!-- Costs -->
+            <div class="space-y-1 mb-4 pb-4 border-b border-gray-600/30">
+                <div class="flex justify-between items-center text-xs opacity-60">
+                    <span>Fuel (Commute)</span>
+                    <span class="text-red-400" id="disp-fuel-commute">-0 LE</span>
+                </div>
+                <div class="flex justify-between items-center text-xs opacity-60">
+                    <span>Fuel (Shifts)</span>
+                    <span class="text-red-400" id="disp-fuel-shift">-0 LE</span>
+                </div>
+                <div class="flex justify-between items-center text-xs opacity-60">
+                    <span>Tolls & Maint.</span>
+                    <span class="text-red-400" id="disp-fixed">-0 LE</span>
+                </div>
+            </div>
+
+            <!-- Net -->
+            <div class="flex justify-between items-center">
+                <span class="font-bold">NET PROFIT</span>
+                <span class="text-2xl font-bold orbitron text-cyan-400" id="disp-net">0 LE</span>
+            </div>
+            
+            <!-- Monthly Projection -->
+            <div class="mt-4 bg-cyan-900/20 p-2 rounded text-center border border-cyan-500/20">
+                <span class="text-[10px] uppercase tracking-wide opacity-70">Monthly Projection</span>
+                <div class="text-xl font-bold text-white neon-text" id="disp-monthly">0 LE</div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- Core Logic & State ---
+        const DISTANCE_ONE_WAY = 220;
+        const TANK_CAPACITY = 40; // Liters
+        const BARS_TOTAL = 8;
+        const LITERS_PER_BAR = TANK_CAPACITY / BARS_TOTAL; // 5 Liters
+
+        // Initial Load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            updateTime();
+            updateCoPilot();
+            recalc();
+            setInterval(updateTime, 60000); // Update clock every min
+            setInterval(updateCoPilot, 300000); // Update copilot every 5 mins
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.hidden-tab, .active-tab').forEach(el => {
+                el.classList.remove('active-tab');
+                el.classList.add('hidden-tab');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden-tab');
+            document.getElementById(`tab-${tabName}`).classList.add('active-tab');
+
+            // Button styling
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'flex-1 py-3 text-sm font-bold opacity-60 hover:opacity-100 transition tab-btn';
+            });
+            const activeBtn = document.getElementById(`btn-${tabName}`);
+            activeBtn.className = 'flex-1 py-3 text-sm font-bold text-cyan-400 border-b-2 border-cyan-400 tab-btn';
+        }
+
+        function recalc() {
+            // 1. Gather Inputs (If empty, treat as 0)
+            const fuelPrice = parseFloat(document.getElementById('fuel-price').value) || 0;
+            const consHwy = parseFloat(document.getElementById('cons-hwy').value) || 0;
+            const consCity = parseFloat(document.getElementById('cons-city').value) || 0;
+            
+            const costMaint = parseFloat(document.getElementById('cost-maint').value) || 0;
+            const costTolls = parseFloat(document.getElementById('cost-tolls').value) || 0;
+
+            // Intercity Revenue
+            const ridersDown = parseFloat(document.getElementById('riders-down').value) || 0;
+            const priceDown = parseFloat(document.getElementById('price-down').value) || 0;
+            const ridersUp = parseFloat(document.getElementById('riders-up').value) || 0;
+            const priceUp = parseFloat(document.getElementById('price-up').value) || 0;
+            
+            // Shift Inputs
+            const caiHours = parseFloat(document.getElementById('cai-hours').value) || 0;
+            const caiRph = parseFloat(document.getElementById('cai-rph').value) || 0; 
+            const caiAvg = parseFloat(document.getElementById('cai-avg').value) || 0; 
+            
+            const alxHours = parseFloat(document.getElementById('alx-hours').value) || 0;
+            const alxRph = parseFloat(document.getElementById('alx-rph').value) || 0;
+            const alxAvg = parseFloat(document.getElementById('alx-avg').value) || 0;
+
+            // 2. Calculations
+            
+            // -- Commute Costs --
+            // 440km round trip. Formula: (Dist / 100) * Consumption
+            const commuteLiters = (440 / 100) * consHwy;
+            const commuteFuelCost = commuteLiters * fuelPrice;
+            
+            // -- Shift Costs --
+            // Estimating distance: Avg urban speed 20km/h * hours
+            const caiDist = caiHours * 20; 
+            const alxDist = alxHours * 25; // Slightly faster in Alex
+            const shiftLiters = ((caiDist + alxDist) / 100) * consCity;
+            const shiftFuelCost = shiftLiters * fuelPrice;
+
+            // -- Revenue --
+            const commRev = (ridersDown * priceDown) + (ridersUp * priceUp);
+            const caiRev = caiHours * caiRph * caiAvg;
+            const alxRev = alxHours * alxRph * alxAvg;
+            const totalRevenue = commRev + caiRev + alxRev;
+
+            // -- Net --
+            const totalCost = commuteFuelCost + shiftFuelCost + costTolls + costMaint;
+            const netProfit = totalRevenue - totalCost;
+            const monthlyProfit = netProfit * 4;
+
+            // -- Fuel Bars Used --
+            const totalLiters = commuteLiters + shiftLiters;
+            const barsUsed = totalLiters / LITERS_PER_BAR;
+
+            // 3. Update DOM
+            document.getElementById('disp-revenue').innerText = Math.round(totalRevenue) + " LE";
+            document.getElementById('disp-fuel-commute').innerText = "-" + Math.round(commuteFuelCost) + " LE";
+            document.getElementById('disp-fuel-shift').innerText = "-" + Math.round(shiftFuelCost) + " LE";
+            document.getElementById('disp-fixed').innerText = "-" + Math.round(costTolls + costMaint) + " LE";
+            
+            document.getElementById('disp-net').innerText = Math.round(netProfit) + " LE";
+            document.getElementById('disp-monthly').innerText = formatCurrency(monthlyProfit);
+            
+            document.getElementById('total-profit').innerText = Math.round(netProfit);
+            document.getElementById('total-fuel-bars').innerText = barsUsed.toFixed(1);
+
+            // Save data
+            saveData();
+        }
+
+        function formatCurrency(num) {
+            return new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(num);
+        }
+
+        // --- Data Persistence ---
+        function saveData() {
+            const inputs = document.querySelectorAll('input');
+            const data = {};
+            inputs.forEach(input => {
+                data[input.id] = input.value;
+            });
+            localStorage.setItem('sagaData', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('sagaData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                for (const [key, value] of Object.entries(data)) {
+                    if (document.getElementById(key)) {
+                        document.getElementById(key).value = value;
+                    }
+                }
+            }
+        }
+
+        // --- Theme & Time ---
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('clock').innerText = timeStr;
+            
+            // Auto theme based on hour (6 PM - 6 AM is night)
+            const hour = now.getHours();
+            if(!localStorage.getItem('manualTheme')) {
+                if (hour >= 18 || hour < 6) {
+                    document.body.className = 'dark-mode min-h-screen pb-20 overflow-x-hidden';
+                } else {
+                    document.body.className = 'light-mode min-h-screen pb-20 overflow-x-hidden';
+                }
+            }
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.classList.contains('dark-mode')) {
+                body.className = 'light-mode min-h-screen pb-20 overflow-x-hidden';
+                localStorage.setItem('manualTheme', 'light');
+            } else {
+                body.className = 'dark-mode min-h-screen pb-20 overflow-x-hidden';
+                localStorage.setItem('manualTheme', 'dark');
+            }
+        }
+
+        // --- The "Co-Pilot" Logic ---
+        function updateCoPilot() {
+            const now = new Date();
+            const day = now.getDay(); // 0=Sun, 3=Wed, 5=Fri, 6=Sat
+            const hour = now.getHours();
+            const msgEl = document.getElementById('copilot-msg');
+            const modeEl = document.getElementById('current-mode');
+            const dayEl = document.getElementById('current-day');
+            
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayEl.innerText = days[day];
+
+            let msg = "Standby Mode. Parked.";
+            let mode = "Rest";
+
+            // WEDNESDAY LOGIC
+            if (day === 3) {
+                if (hour >= 5 && hour < 10) {
+                    mode = "Commute: CAI -> ALX";
+                    msg = "Optimize: Keep RPM < 2500. Cruise at 90km/h for max efficiency.";
+                } else if (hour >= 17 && hour < 23) {
+                    mode = "Shift: Cairo (Oct/Zayed)";
+                    msg = "Strategy: Stay in October. Target University exits. Avoid Mohandeseen.";
+                } else {
+                    mode = "Work / Prep";
+                    msg = "Prepare Saga for evening shift. Check tire pressure (32 PSI).";
+                }
+            }
+            // THURSDAY
+            else if (day === 4) {
+                if (hour >= 17 && hour < 23) {
+                    mode = "Shift: Cairo (Oct/Zayed)";
+                    msg = "Traffic Alert: Thursday night rush. Stick to main axes. Multi-app ON.";
+                } else {
+                    mode = "Work Day";
+                    msg = "Conserve energy. Evening shift is high demand.";
+                }
+            }
+            // FRIDAY
+            else if (day === 5) {
+                if (hour >= 14 && hour < 20) {
+                    mode = "Pre-Commute";
+                    msg = "Check inDrive for riders heading to Alexandria. Fill Tank.";
+                } else if (hour >= 20 || hour < 2) {
+                    mode = "Commute: ALX -> CAI";
+                    msg = "Highway Mode: Use 'D', never 'S'. Coast into toll gates.";
+                } else {
+                    mode = "Rest";
+                    msg = "Weekend loading...";
+                }
+            }
+            // SATURDAY
+            else if (day === 6) {
+                mode = "Shift: Alexandria";
+                msg = "Grind Mode: Target Corniche & Desert fringes. 8 Hour goal.";
+            }
+            // SUN-TUE
+            else {
+                mode = "Off Duty";
+                msg = "Review weekly stats. Plan maintenance.";
+            }
+
+            msgEl.innerText = msg;
+            modeEl.innerText = mode;
+        }
+
+    </script>
+</body>
+</html>
